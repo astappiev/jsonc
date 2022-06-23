@@ -59,3 +59,15 @@ func TestNewLines(t *testing.T) {
   }`
 	assert.Equal(t, expect, string(ToJSON([]byte(json))))
 }
+
+func TestInvalidEscapeChar(t *testing.T) {
+	json := `
+  {
+    "description": "This meal has it all\u2014flavorful wild rice. Don\'t have time to dedicate hours.",
+  }`
+	expect := `
+  {
+    "description": "This meal has it all\u2014flavorful wild rice. Don't have time to dedicate hours." 
+  }`
+	assert.Equal(t, expect, string(ToJSON([]byte(json))))
+}

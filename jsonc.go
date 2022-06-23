@@ -51,9 +51,14 @@ func ToJSON(src []byte) []byte {
 				if src[i] == '\n' { // escape new lines
 					dst = append(dst, '\\', 'n')
 					nl++
-				} else {
-					dst = append(dst, src[i])
+					continue
 				}
+
+				if src[i] == '\\' && src[i+1] == '\'' && src[i-1] != '\\' {
+					continue // skip invalid escaping of single quotes
+				}
+
+				dst = append(dst, src[i])
 
 				if src[i] == '"' { // possible end of string literal
 					j := i - 1

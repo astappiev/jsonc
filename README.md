@@ -8,6 +8,7 @@ The jsonc format is like standard json but with following additional features:
 - comments, single line (`// text`) or multiline (`/* text */`)
 - trailing commas
 - new lines in string literals
+- remove invalid escape character of `'`
 
 ```text
 {
