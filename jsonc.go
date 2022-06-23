@@ -1,28 +1,16 @@
 package jsonc
 
-// ToJSON strips out comments and trailing commas and convert the input to a
-// valid JSON per the official spec: https://tools.ietf.org/html/rfc8259
+// ToJSON strips out comments and trailing commas and convert the input to a valid JSON
 //
-// The resulting JSON will always be the same length as the input and it will
-// include all of the same line breaks at matching offsets. This is to ensure
-// the result can be later processed by a external parser and that that
+// The resulting JSON will always be the same length as the input, and it will include all the same line breaks
+// at matching offsets. This is to ensure the result can be later processed by an external parser and that that
 // parser will report messages or errors with the correct offsets.
 func ToJSON(src []byte) []byte {
-	return toJSON(src, nil)
-}
-
-// ToJSONInPlace is the same as ToJSON, but this method reuses the input json
-// buffer to avoid allocations. Do not use the original bytes slice upon return.
-func ToJSONInPlace(src []byte) []byte {
-	return toJSON(src, src)
-}
-
-func toJSON(src, dst []byte) []byte {
-	dst = dst[:0]
+	var dst []byte
 	for i := 0; i < len(src); i++ {
-		if src[i] == '/' {
+		if src[i] == '/' { // start of comment
 			if i < len(src)-1 {
-				if src[i+1] == '/' {
+				if src[i+1] == '/' { // single line comment
 					dst = append(dst, ' ', ' ')
 					i += 2
 					for ; i < len(src); i++ {
@@ -37,7 +25,7 @@ func toJSON(src, dst []byte) []byte {
 					}
 					continue
 				}
-				if src[i+1] == '*' {
+				if src[i+1] == '*' { // multi line comment
 					dst = append(dst, ' ', ' ')
 					i += 2
 					for ; i < len(src)-1; i++ {
@@ -57,17 +45,34 @@ func toJSON(src, dst []byte) []byte {
 			}
 		}
 		dst = append(dst, src[i])
-		if src[i] == '"' {
+		if src[i] == '"' { // start of string literal
+			var nl = 0
 			for i = i + 1; i < len(src); i++ {
-				dst = append(dst, src[i])
-				if src[i] == '"' {
+				if src[i] == '\n' { // escape new lines
+					dst = append(dst, '\\', 'n')
+					nl++
+				} else {
+					dst = append(dst, src[i])
+				}
+
+				if src[i] == '"' { // possible end of string literal
 					j := i - 1
 					for ; ; j-- {
 						if src[j] != '\\' {
 							break
 						}
 					}
-					if (j-i)%2 != 0 {
+					if (j-i)%2 != 0 { // check if not escaped
+						if nl > 0 { // if new lines were escaped, add them back
+							if src[i+1] == ',' { // finish line with comma first
+								i++
+								dst = append(dst, src[i])
+							}
+							for nl > 0 {
+								nl--
+								dst = append(dst, '\n')
+							}
+						}
 						break
 					}
 				}

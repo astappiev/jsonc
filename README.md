@@ -1,15 +1,16 @@
 # jsonc
 
-[![GoDoc](https://img.shields.io/badge/api-reference-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/tidwall/jsonc) 
+[![GoDoc](https://img.shields.io/badge/api-reference-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/astappiev/jsonc) 
 
 jsonc is a Go package that converts the jsonc format to standard json.
 
-The jsonc format is like standard json but allows for comments and trailing
-commas, such as:
+The jsonc format is like standard json but with following additional features:
+- comments, single line (`// text`) or multiline (`/* text */`)
+- trailing commas
+- new lines in string literals
 
-```js
+```text
 {
-
   /* Dev Machine */
   "dbInfo": {
     "host": "localhost",
@@ -18,22 +19,10 @@ commas, such as:
     "password": "pass123", // please use a hashed password
   },
 
-  /* Only SMTP Allowed */
-  "emailInfo": {
-    "email": "josh@example.com", // use full email address
-    "password": "pass123",
-    "smtp": "smpt.example.com",
-  }
-
+  "title": "Hello 
+    World",
 }
 ```
-
-There's a provided function `jsonc.ToJSON`, which does the conversion.
-
-The resulting JSON will always be the same length as the input and it will
-include all of the same line breaks at matching offsets. This is to ensure
-the result can be later processed by a external parser and that that
-parser will report messages or errors with the correct offsets.
 
 ## Getting Started
 
@@ -42,19 +31,25 @@ parser will report messages or errors with the correct offsets.
 To start using jsonc, install Go and run `go get`:
 
 ```sh
-$ go get -u github.com/tidwall/jsonc
+$ go get -u github.com/astappiev/jsonc
 ```
 
 This will retrieve the library.
 
 ### Example
 
+There's a provided function `jsonc.ToJSON`, which does the conversion.
+
+The resulting JSON will always be the same length as the input, and it will
+include all the same line breaks at matching offsets. This is to ensure
+the result can be later processed by an external parser and that that
+parser will report messages or errors with the correct offsets.
+
 The following example uses a JSON document that has comments and trailing
 commas and converts it just prior to unmarshalling with the standard Go
 JSON library.
 
 ```go
-
 data := `
 {
   /* Dev Machine */
@@ -64,26 +59,17 @@ data := `
     "username": "josh",
     "password": "pass123", // use a hashed password
   },
-  /* Only SMTP Allowed */
-  "emailInfo": {
-    "email": "josh@example.com",
-    "password": "pass123",
-    "smtp": "smpt.example.com",
-  }
+  "title": "Hello 
+    World",
 }
 `
 
 err := json.Unmarshal(jsonc.ToJSON(data), &config)
-
 ```
 
 ### Performance
 
 It's fast and can convert GB/s of jsonc to json.
-
-## Contact
-
-Josh Baker [@tidwall](http://twitter.com/tidwall)
 
 ## License
 
