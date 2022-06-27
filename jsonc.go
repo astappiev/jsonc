@@ -45,6 +45,7 @@ func ToJSON(src []byte) []byte {
 			}
 		}
 		dst = append(dst, src[i])
+		escaping := false
 		if src[i] == '"' { // start of string literal
 			var nl = 0
 			for i = i + 1; i < len(src); i++ {
@@ -58,6 +59,17 @@ func ToJSON(src []byte) []byte {
 					continue // skip invalid escaping of single quotes
 				}
 
+				if src[i] == '\t' { // escape tabs
+					dst = append(dst, '\\', 't')
+					continue
+				}
+
+				if escaping == true && src[i] == '"' { // end of escaping
+					dst = append(dst, '\\', '"')
+					escaping = false
+					continue
+				}
+
 				dst = append(dst, src[i])
 
 				if src[i] == '"' { // possible end of string literal
@@ -68,6 +80,27 @@ func ToJSON(src []byte) []byte {
 						}
 					}
 					if (j-i)%2 != 0 { // check if not escaped
+						var firstCh byte
+						spaces := 0
+						for j := i + 1; ; j++ { // calculate spaces after quote and first non-space character
+							if src[j] != ' ' && src[j] != '\t' && src[j] != '\n' && src[j] != '\r' {
+								firstCh = src[j]
+								break
+							} else {
+								spaces++
+							}
+						}
+
+						// check if quote is not followed by expected character
+						if firstCh != ',' && firstCh != ':' && firstCh != '}' && firstCh != ']' {
+							if spaces == 0 { // if no spaces between quote and text, probably we need to escape it
+								dst = append(dst[:len(dst)-1], '\\', '"')
+								escaping = true
+							} else { // if there are spaces, we can just assume comma is missing
+								dst = append(dst, ',')
+							}
+						}
+
 						if nl > 0 { // if new lines were escaped, add them back
 							if src[i+1] == ',' { // finish line with comma first
 								i++
@@ -78,12 +111,14 @@ func ToJSON(src []byte) []byte {
 								dst = append(dst, '\n')
 							}
 						}
-						break
+						if escaping == false {
+							break
+						}
 					}
 				}
 			}
 		} else if src[i] == '}' || src[i] == ']' {
-			for j := len(dst) - 2; j >= 0; j-- {
+			for j := len(dst) - 2; j >= 0; j-- { // remove trailing comma
 				if dst[j] <= ' ' {
 					continue
 				}

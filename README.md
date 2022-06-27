@@ -7,8 +7,11 @@ jsonc is a Go package that converts the jsonc format to standard json.
 The jsonc format is like standard json but with following additional features:
 - comments, single line (`// text`) or multiline (`/* text */`)
 - trailing commas
-- new lines in string literals
+- replace new line (`\n`) chars with `\\` following by `n`
+- replace tabs (`\t`) chars with `\\` following by `t`
 - remove invalid escape character of `'`
+- escape `"` in string literals
+- auto add missing commas
 
 ```text
 {
